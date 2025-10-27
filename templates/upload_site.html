@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <meta charset="utf-8">
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>Upload Tài liệu UTC</title>
+
+      <!-- bootstrap css -->
+      <link rel="stylesheet" href="{{ url_for('static', filename='propertiesOfOrigionalWebsite/css/bootstrap.min.css') }}">
+      <!-- style css -->
+      <link rel="stylesheet" href="{{ url_for('static', filename='propertiesOfOrigionalWebsite/css/style.css') }}">
+      <!-- Responsive-->
+      <link rel="stylesheet" href="{{ url_for('static', filename='propertiesOfOrigionalWebsite/css/responsive.css') }}">
+      <!-- font-awesome -->
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+      <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap&subset=vietnamese" rel="stylesheet">
+   </head>
+   <body style="font-family: 'Montserrat', sans-serif;">
+      <div class="header_section">
+         <div class="container">
+            <nav class="navbar navbar-expand-lg navbar-light bg-light">
+               <a class="navbar-brand" href="{{ url_for('home') }}">
+                  <img src="{{ url_for('static', filename='propertiesOfOrigionalWebsite/images/logo.png') }}" style="height:100px; width:auto;">
+               </a>
+               <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent">
+                  <span class="navbar-toggler-icon"></span>
+               </button>
+               <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav ml-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('home') }}" style="color: #000;">Trang tìm kiếm</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('logout') }}" style="color: #000;">Đăng xuất</a>
+                        </li>
+                    </ul>
+               </div>
+            </nav>
+         </div>
+
+         <!-- banner section -->
+         <div class="banner_section layout_padding">
+            <div class="container">
+               <div class="row">
+                  <div class="col-md-6">
+                     <h1 class="banner_taital" style="color: #ffcf00">
+                       <span style="color: #ffffff">U</span>
+                       <span style="color: #a8a9ad">T</span>
+                       <span style="color: #ffcf00">C</span> <br>
+                        Quản lý tài liệu
+                        <br> <span style="color: #ffffff; font-size: 16px !important">Xin chào, {{ session.user.email }}!</span>
+                     </h1>
+                     <div class="read_bt"><a href="{{ url_for('logout') }}">Đăng xuất</a></div>
+                  </div>
+                  <div class="col-md-6">
+                     <div class="banner_img">
+                        <img style="border-radius: 35px;" src="{{ url_for('static', filename='propertiesOfOrigionalWebsite/images/banner-img.png') }}">
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+
+      <!-- upload section -->
+      <div class="domain_section">
+         <div class="container">
+            <div class="domain_box">
+               <div class="domain_main text-center">
+
+                  <!-- Hiển thị Flash Messages -->
+                  {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                      {% for category, message in messages %}
+                        <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show" role="alert">
+                          {{ message }}
+                          <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                          </button>
+                        </div>
+                      {% endfor %}
+                    {% endif %}
+                  {% endwith %}
+
+                  <form action="{{ url_for('upload_page') }}" method="post" enctype="multipart/form-data" class="mb-3">
+                     <input type="file" name="file" accept="application/pdf" class="form-control mb-2" style="max-width:400px; margin:auto;">
+                     <button type="submit" class="btn btn-warning">Upload</button>
+                  </form>
+
+                  <h3 class="mt-4">📂 Danh sách file PDF</h3>
+                  <table class="table table-bordered table-striped mt-3">
+                     <thead class="thead-light">
+                        <tr>
+                           <th>Tên file</th>
+                           <th>Thời gian upload</th>
+                           <!-- THÊM CỘT HÀNH ĐỘNG -->
+                           <th>Hành động</th>
+                        </tr>
+                     </thead>
+                     <tbody>
+                        {% for f in files %}
+                        <tr>
+                           <!-- SỬ DỤNG f.pretty_name THAY VÌ f.name -->
+                           <td><a href="{{ f.url }}" target="_blank"><i class="fas fa-file-pdf"></i> {{ f.pretty_name }}</a></td>
+                           <td>{{ f.created_at }}</td>
+                           <!-- THÊM NÚT XÓA -->
+                           <td>
+                               <button class="btn btn-danger btn-sm" onclick="deleteFile('{{ f.safe_name }}', '{{ f.pretty_name }}')">
+                                   <i class="fas fa-trash"></i> Xóa
+                               </button>
+                           </td>
+                        </tr>
+                        {% endfor %}
+                     </tbody>
+                  </table>
+               </div>
+            </div>
+         </div>
+      </div>
+
+      <!-- JS -->
+      <script src="{{ url_for('static', filename='propertiesOfOrigionalWebsite/js/jquery.min.js') }}"></script>
+      <script src="{{ url_for('static', filename='propertiesOfOrigionalWebsite/js/popper.min.js') }}"></script>
+      <script src="{{ url_for('static', filename='propertiesOfOrigionalWebsite/js/bootstrap.bundle.min.js') }}"></script>
+
+      <!-- THÊM SCRIPT XỬ LÝ XÓA -->
+      <script>
+        async function deleteFile(safeName, prettyName) {
+            // Hiển thị hộp thoại xác nhận
+            if (!confirm(`Bạn có chắc chắn muốn xóa file "${prettyName}" không?\nHành động này sẽ xóa file PDF, file text và toàn bộ dữ liệu liên quan. Không thể hoàn tác.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/delete_file', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ safe_name: safeName }),
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    // Tải lại trang để cập nhật danh sách và hiển thị flash message từ server
+                    window.location.reload();
+                } else {
+                    alert(`Lỗi khi xóa file: ${result.error}`);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Đã xảy ra lỗi không mong muốn. Vui lòng kiểm tra console.');
+            }
+        }
+      </script>
+   </body>
+</html>
+

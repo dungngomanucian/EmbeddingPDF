@@ -1,0 +1,8 @@
+jinja2
+python-dotenv
+supabase
+pymupdf
+sentence-transformers
+faiss-cpu
+python-dateutil
+flask

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <meta charset="utf-8">
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>Đăng ký tài khoản</title>
+      <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='propertiesOfOrigionalWebsite/css/bootstrap.min.css') }}">
+      <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='propertiesOfOrigionalWebsite/css/style.css') }}">
+      <link rel="stylesheet" href="{{ url_for('static', filename='propertiesOfOrigionalWebsite/css/responsive.css') }}">
+      <link rel="icon" href="{{ url_for('static', filename='propertiesOfOrigionalWebsite/images/fevicon.png') }}" type="image/gif" />
+      <link href="https://fonts.googleapis.com/css?family=Poppins:400,700|Sen:400,700,800&display=swap" rel="stylesheet">
+   </head>
+   <body style="font-family: 'Montserrat', sans-serif;">
+   {% with messages = get_flashed_messages(with_categories=true) %}
+         {% if messages %}
+            {% for category, message in messages %}
+               <div class="alert alert-{{ category or 'info' }}" role="alert">
+                  {{ message }}
+               </div>
+            {% endfor %}
+         {% endif %}
+      {% endwith %}
+      <div class="header_section">
+         <div class="container">
+            <nav class="navbar navbar-expand-lg navbar-light bg-light">
+               <a class="navbar-brand" href="/">
+                  <img src="{{ url_for('static', filename='propertiesOfOrigionalWebsite/images/logo.png') }}" style="height:100px; width:auto;">
+               </a>
+               <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent">
+                  <span class="navbar-toggler-icon"></span>
+               </button>
+               <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                  <ul class="navbar-nav ml-auto">
+                     <li><a href="{{ url_for('login') }}"><i class="fas fa-sign-in-alt"></i> Đăng nhập</a></li>
+                     <li><a href="{{ url_for('signup') }}"><i class="fas fa-user-plus"></i> Đăng ký</a></li>
+                  </ul>
+               </div>
+            </nav>
+         </div>
+      </div>
+
+      <!-- signup form -->
+      <div class="contact_section layout_padding">
+         <div class="container">
+            <div class="row">
+               <div class="col-sm-12">
+                  <h1 class="contact_taital">Đăng ký tài khoản</h1>
+               </div>
+            </div>
+            <div class="contact_section_2">
+               <div class="row">
+                  <div class="col-md-12">
+                     <form method="post" action="/signup">
+                        {% if error %}
+                          <div class="alert alert-danger">{{ error }}</div>
+                        {% endif %}
+                        <input type="email" class="mail_text" placeholder="Nhập Email" name="email" required>
+                        <input type="password" class="mail_text" placeholder="Nhập mật khẩu" name="password" required>
+                        <input type="password" class="mail_text" placeholder="Xác nhận mật khẩu" name="confirm" required>
+                        <div class="send_bt">
+                           <button type="submit" class="btn btn-warning w-100" style="margin-top: 20px">Đăng ký</button>
+                        </div>
+                     </form>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+
+      <script src="{{ url_for('static', filename='propertiesOfOrigionalWebsite/js/jquery.min.js') }}"></script>
+      <script src="{{ url_for('static', filename='propertiesOfOrigionalWebsite/js/popper.min.js') }}"></script>
+      <script src="{{ url_for('static', filename='propertiesOfOrigionalWebsite/js/bootstrap.bundle.min.js') }}"></script>
+   </body>
+</html>

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="vi">
+   <head>
+      <meta charset="utf-8">
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>Tra cứu thông tin UTC</title>
+
+      <link rel="stylesheet" href="{{ url_for('static', filename='propertiesOfOrigionalWebsite/css/bootstrap.min.css') }}">
+      <link rel="stylesheet" href="{{ url_for('static', filename='propertiesOfOrigionalWebsite/css/style.css') }}">
+      <link rel="stylesheet" href="{{ url_for('static', filename='propertiesOfOrigionalWebsite/css/responsive.css') }}">
+      <link rel="icon" href="{{ url_for('static', filename='propertiesOfOrigionalWebsite/images/fevicon.png') }}" type="image/gif" />
+      <link href="https://fonts.googleapis.com/css?family=Poppins:400,700|Sen:400,700,800&display=swap" rel="stylesheet">
+      <link rel="stylesheet" href="{{ url_for('static', filename='propertiesOfOrigionalWebsite/css/jquery.mCustomScrollbar.min.css') }}">
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+      <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap&subset=vietnamese" rel="stylesheet">
+
+      <style>
+        /* CSS cho thẻ kết quả được giữ nguyên và tối ưu */
+        .card-title {
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: #003366; /* Màu tiêu đề nổi bật */
+        }
+        .card-text {
+          text-align: justify;
+          line-height: 1.7;
+          white-space: pre-wrap; /* Giữ lại các ký tự xuống dòng từ backend */
+        }
+        .card-header a {
+            text-decoration: none;
+            font-weight: 500;
+            color: #343a40;
+        }
+        .card-header a:hover {
+            text-decoration: underline;
+        }
+        .highlight {
+          background-color: #ffcf00; /* Nền màu vàng */
+          padding: 2px 4px;
+          border-radius: 3px;
+          font-weight: 600;         /* Chữ đậm */
+        }
+      </style>
+   </head>
+   <body style="font-family: 'Montserrat', sans-serif;">
+      <div class="header_section">
+         <div class="container">
+            <nav class="navbar navbar-expand-lg navbar-light bg-light">
+               <a class="navbar-brand" href="{{ url_for('home') }}">
+                  <img src="{{ url_for('static', filename='propertiesOfOrigionalWebsite/images/logo.png') }}" style="height:100px; width:auto;">
+               </a>
+               <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent">
+                  <span class="navbar-toggler-icon"></span>
+               </button>
+               <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                  <ul class="navbar-nav ml-auto">
+                     <li><a href="{{ url_for('login') }}"><i class="fas fa-sign-in-alt"></i> Đăng nhập</a></li>
+                     <li><a href="{{ url_for('signup') }}"><i class="fas fa-user-plus"></i> Đăng ký</a></li>
+                  </ul>
+               </div>
+            </nav>
+            <div class="custom_bg">
+               <div class="custom_menu" style="width: 100%; display: flex; justify-content: center;">
+                  <ul style="display: flex; list-style: none; padding: 0; margin: 0;">
+                     <li><a href="{{ url_for('login') }}"><i class="fas fa-sign-in-alt"></i> Đăng nhập</a></li>
+                     <li><a href="{{ url_for('signup') }}"><i class="fas fa-user-plus"></i> Đăng ký</a></li>
+                  </ul>
+               </div>
+            </div>
+         </div>
+         <div class="banner_section layout_padding">
+            <div class="container">
+               <div class="row">
+                  <div class="col-md-6">
+                     <h1 class="banner_taital" style="color: #ffcf00">
+                       <span style="color: #ffffff">U</span>
+                       <span style="color: #a8a9ad">T</span>
+                       <span style="color: #ffcf00">C</span> <br>
+                       Tra cứu thông tin
+                        <br> <br> <span style="color: #ffffff; font-size: 25px !important">Xin chào các bạn sinh viên!</span>
+                     </h1>
+                  </div>
+                  <div class="col-md-6">
+                     <div class="banner_img">
+                        <img style="border-radius: 35px;" src="{{ url_for('static', filename='propertiesOfOrigionalWebsite/images/banner-img.png') }}">
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+      <div class="domain_section">
+         <div class="container">
+            <div class="domain_box">
+               <div class="domain_main">
+                  <form id="searchForm" class="example" action="#">
+                    <input type="text" id="queryInput" placeholder="Nhập câu hỏi hoặc từ khóa..." name="query" autocomplete="off">
+                    <button type="submit"><i class="fas fa-search"></i> Tìm kiếm</button>
+                  </form>
+                  <div id="results" class="mt-4" style="padding:20px;"></div>
+               </div>
+            </div>
+         </div>
+      </div>
+       <div class="about_section layout_padding">
+         <div class="container">
+            <div class="row">
+               <div class="col-md-4">
+                  <div class="about_box">
+                     <div class="icon_1"><img src="{{ url_for('static', filename='propertiesOfOrigionalWebsite/images/icon-1.png') }}"></div>
+                     <h3 class="faster_text">Tìm kiếm nhanh chóng</h3>
+                     <p class="lorem_text">Dữ liệu cập nhật liên tục</p>
+                  </div>
+               </div>
+               <div class="col-md-4">
+                  <div class="about_box">
+                     <div class="icon_1"><img src="{{ url_for('static', filename='propertiesOfOrigionalWebsite/images/icon-2.png') }}"></div>
+                     <h3 class="faster_text">Thông tin chính xác</h3>
+                     <p class="lorem_text">Hỗ trợ tải file thông báo gốc</p>
+                  </div>
+               </div>
+               <div class="col-md-4">
+                  <div class="about_box">
+                     <div class="icon_1"><img src="{{ url_for('static', filename='propertiesOfOrigionalWebsite/images/icon-3.png') }}"></div>
+                     <h3 class="faster_text">Hỗ trợ 24/7</h3>
+                     <p class="lorem_text">Liên hệ phòng CTHTSV</p>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+      <script src="{{ url_for('static', filename='propertiesOfOrigionalWebsite/js/jquery.min.js') }}"></script>
+      <script src="{{ url_for('static', filename='propertiesOfOrigionalWebsite/js/popper.min.js') }}"></script>
+      <script src="{{ url_for('static', filename='propertiesOfOrigionalWebsite/js/bootstrap.bundle.min.js') }}"></script>
+      <script src="{{ url_for('static', filename='propertiesOfOrigionalWebsite/js/jquery-3.0.0.min.js') }}"></script>
+      <script src="{{ url_for('static', filename='propertiesOfOrigionalWebsite/js/plugin.js') }}"></script>
+      <script src="{{ url_for('static', filename='propertiesOfOrigionalWebsite/js/jquery.mCustomScrollbar.concat.min.js') }}"></script>
+      <script src="{{ url_for('static', filename='propertiesOfOrigionalWebsite/js/custom.js') }}"></script>
+
+      <script>
+         document.getElementById("searchForm").addEventListener("submit", async (e) => {
+             e.preventDefault();
+             const query = document.getElementById("queryInput").value;
+             const resultsDiv = document.getElementById("results");
+
+             if (!query.trim()) {
+                 resultsDiv.innerHTML = "<p class='text-warning text-center'>Vui lòng nhập nội dung tìm kiếm.</p>";
+                 return;
+             }
+
+             // Hàm để highlight từ khóa
+             const highlightKeywords = (text, query) => {
+                if (!query) return text;
+                // Tách query thành các từ, loại bỏ các từ vô nghĩa ngắn
+                const keywords = query.split(/\s+/).filter(word => word.length > 2);
+                const regex = new RegExp(`(${keywords.join('|')})`, 'gi');
+                return text.replace(regex, '<mark class="highlight">$1</mark>');
+             };
+
+             resultsDiv.innerHTML = `<div class="d-flex justify-content-center"><div class="spinner-border text-primary" role="status"></div></div><p class="text-center mt-2">Đang tìm kiếm...</p>`;
+
+             try {
+                  const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+                  const data = await res.json();
+                  if (data.error) throw new Error(data.error);
+
+                  let html = "";
+                  if (data.results && data.results.length > 0) {
+                      html += "<h3 class='mb-4 text-center'>Kết quả tìm kiếm</h3>";
+                      data.results.forEach(r => {
+                         // Áp dụng highlight vào nội dung
+                         const highlightedContent = highlightKeywords(r.content_body, query);
+
+                         html += `
+                             <div class="card mb-3 shadow-sm result-card">
+                                 <div class="card-header bg-light py-2">
+                                     <a href="${r.source_file_url}" target="_blank" title="Tải file PDF gốc">
+                                         <i class="fas fa-file-pdf"></i>
+                                         <strong>Nguồn:</strong> ${r.source_file_pretty_name}
+                                     </a>
+                                 </div>
+                                 <div class="card-body">
+                                     <h5 class="card-title">${r.title}</h5>
+                                     <p class="card-text">${highlightedContent}</p>
+                                     <p class="text-muted small mt-3 mb-0 text-right">
+                                         <i class="fas fa-check-circle text-success"></i>
+                                         Độ liên quan: <strong>${r.similarity ? (r.similarity * 100).toFixed(0) : 'N/A'}%</strong>
+                                     </p>
+                                 </div>
+                             </div>`;
+                       });
+                  } else {
+                      html = "<p class='text-center text-info'>Không tìm thấy kết quả nào phù hợp.</p>";
+                  }
+                  resultsDiv.innerHTML = html;
+             } catch(error) {
+                  resultsDiv.innerHTML = `<p class='text-center text-danger'>Đã xảy ra lỗi khi tìm kiếm: ${error.message}</p>`;
+             }
+         });
+      </script>
+   </body>
+</html>

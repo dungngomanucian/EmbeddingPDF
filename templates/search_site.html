@@ -16,34 +16,110 @@
       <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap&subset=vietnamese" rel="stylesheet">
 
       <style>
-        /* CSS cho thẻ kết quả được giữ nguyên và tối ưu */
-        .card-title {
+         /* CSS GỐC GIỮ NGUYÊN */
+         .card-title {
             font-weight: 600;
             margin-bottom: 0.75rem;
-            color: #003366; /* Màu tiêu đề nổi bật */
-        }
-        .card-text {
-          text-align: justify;
-          line-height: 1.7;
-          white-space: pre-wrap; /* Giữ lại các ký tự xuống dòng từ backend */
-        }
-        .card-header a {
+            color: #003366;
+         }
+         .card-header a {
             text-decoration: none;
             font-weight: 500;
             color: #343a40;
-        }
-        .card-header a:hover {
+         }
+         .card-header a:hover {
             text-decoration: underline;
-        }
-        .highlight {
-          background-color: #ffcf00; /* Nền màu vàng */
-          padding: 2px 4px;
-          border-radius: 3px;
-          font-weight: 600;         /* Chữ đậm */
-        }
+         }
+         .highlight {
+            background-color: #ffcf00;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: 600;
+         }
+         
+         /* === CSS MỚI CHO LIGHTBOX MODAL === */
+         .image-modal {
+            display: none; /* Ẩn mặc định */
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.9);
+            padding-top: 60px;
+         }
+         .image-modal-content {
+            margin: auto;
+            display: block;
+            width: auto;
+            max-width: 90%;
+            max-height: 90vh;
+         }
+         .image-modal-close {
+            position: absolute;
+            top: 15px;
+            right: 35px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            transition: 0.3s;
+            cursor: pointer;
+         }
+         .image-modal-close:hover,
+         .image-modal-close:focus {
+            color: #bbb;
+            text-decoration: none;
+         }
+         /* === KẾT THÚC CSS MỚI === */
+
+         /* === CSS MỚI CHO ẢNH THU NHỎ === */
+         .thumbnail-gallery {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+         }
+         .thumbnail-item {
+            border: 1px solid #ddd;
+            padding: 5px;
+            border-radius: 4px;
+            background: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 180px; /* Tăng độ rộng để chứa cả link file */
+         }
+         .thumbnail-item img {
+            width: 100%; /* Chiều rộng 100% của parent */
+            height: 220px; /* Chiều cao cố định */
+            object-fit: cover; /* Giữ tỷ lệ, cắt bớt nếu cần */
+            cursor: pointer;
+            transition: transform 0.2s;
+         }
+         .thumbnail-item img:hover {
+             transform: scale(1.05);
+         }
+         .thumbnail-item p {
+             margin: 5px 0 0 0;
+         }
+         .thumbnail-item a.small-link {
+            font-size: 0.8em;
+            display: block; /* Cho link xuống dòng */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis; /* Cắt ngắn link nếu quá dài */
+         }
+         /* === KẾT THÚC CSS MỚI === */
+         
       </style>
    </head>
    <body style="font-family: 'Montserrat', sans-serif;">
+      
+      <div id="imageModal" class="image-modal">
+         <span class="image-modal-close" id="modalCloseBtn">&times;</span>
+         <img class="image-modal-content" id="modalImage">
+      </div>
       <div class="header_section">
          <div class="container">
             <nav class="navbar navbar-expand-lg navbar-light bg-light">
@@ -74,11 +150,11 @@
                <div class="row">
                   <div class="col-md-6">
                      <h1 class="banner_taital" style="color: #ffcf00">
-                       <span style="color: #ffffff">U</span>
-                       <span style="color: #a8a9ad">T</span>
-                       <span style="color: #ffcf00">C</span> <br>
-                       Tra cứu thông tin
-                        <br> <br> <span style="color: #ffffff; font-size: 25px !important">Xin chào các bạn sinh viên!</span>
+                        <span style="color: #ffffff">U</span>
+                        <span style="color: #a8a9ad">T</span>
+                        <span style="color: #ffcf00">C</span> <br>
+                        Tra cứu thông tin
+                         <br> <br> <span style="color: #ffffff; font-size: 25px !important">Xin chào các bạn sinh viên!</span>
                      </h1>
                   </div>
                   <div class="col-md-6">
@@ -95,15 +171,15 @@
             <div class="domain_box">
                <div class="domain_main">
                   <form id="searchForm" class="example" action="#">
-                    <input type="text" id="queryInput" placeholder="Nhập câu hỏi hoặc từ khóa..." name="query" autocomplete="off">
-                    <button type="submit"><i class="fas fa-search"></i> Tìm kiếm</button>
+                     <input type="text" id="queryInput" placeholder="Nhập câu hỏi hoặc từ khóa..." name="query" autocomplete="off">
+                     <button type="submit"><i class="fas fa-search"></i> Tìm kiếm</button>
                   </form>
                   <div id="results" class="mt-4" style="padding:20px;"></div>
                </div>
             </div>
          </div>
       </div>
-       <div class="about_section layout_padding">
+      <div class="about_section layout_padding">
          <div class="container">
             <div class="row">
                <div class="col-md-4">
@@ -139,6 +215,30 @@
       <script src="{{ url_for('static', filename='propertiesOfOrigionalWebsite/js/custom.js') }}"></script>
 
       <script>
+         // === JS MỚI CHO MODAL ===
+         const modal = document.getElementById("imageModal");
+         const modalImg = document.getElementById("modalImage");
+         const closeModalBtn = document.getElementById("modalCloseBtn");
+
+         // Hàm mở modal
+         function openModal(imgUrl) {
+            modal.style.display = "block";
+            modalImg.src = imgUrl;
+         }
+
+         // Hàm đóng modal
+         closeModalBtn.onclick = function() {
+            modal.style.display = "none";
+         }
+         modal.onclick = function(event) {
+             // Nếu click vào nền đen (không phải ảnh) thì đóng modal
+             if (event.target === modal) {
+                 modal.style.display = "none";
+             }
+         }
+         // === KẾT THÚC JS MỚI ===
+
+
          document.getElementById("searchForm").addEventListener("submit", async (e) => {
              e.preventDefault();
              const query = document.getElementById("queryInput").value;
@@ -148,56 +248,69 @@
                  resultsDiv.innerHTML = "<p class='text-warning text-center'>Vui lòng nhập nội dung tìm kiếm.</p>";
                  return;
              }
-
-             // Hàm để highlight từ khóa
-             const highlightKeywords = (text, query) => {
-                if (!query) return text;
-                // Tách query thành các từ, loại bỏ các từ vô nghĩa ngắn
-                const keywords = query.split(/\s+/).filter(word => word.length > 2);
-                const regex = new RegExp(`(${keywords.join('|')})`, 'gi');
-                return text.replace(regex, '<mark class="highlight">$1</mark>');
-             };
+             
+             // Hàm highlight không còn cần thiết vì không hiển thị text
+             // const highlightKeywords = ...
 
              resultsDiv.innerHTML = `<div class="d-flex justify-content-center"><div class="spinner-border text-primary" role="status"></div></div><p class="text-center mt-2">Đang tìm kiếm...</p>`;
 
              try {
-                  const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
-                  const data = await res.json();
-                  if (data.error) throw new Error(data.error);
+                 const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+                 const data = await res.json();
+                 if (data.error) throw new Error(data.error);
 
-                  let html = "";
-                  if (data.results && data.results.length > 0) {
-                      html += "<h3 class='mb-4 text-center'>Kết quả tìm kiếm</h3>";
-                      data.results.forEach(r => {
-                         // Áp dụng highlight vào nội dung
-                         const highlightedContent = highlightKeywords(r.content_body, query);
+                 let html = "";
+                 if (data.results && data.results.length > 0) {
+                     
+                     // === LOGIC LỌC ẢNH TRÙNG LẶP ===
+                     const uniqueImages = new Map();
+                     data.results.forEach(r => {
+                         // Chỉ thêm nếu ảnh có URL và chưa tồn tại
+                         if (r.image_url && !uniqueImages.has(r.image_url)) {
+                             uniqueImages.set(r.image_url, r);
+                         }
+                     });
+                     // === KẾT THÚC LOGIC LỌC ===
+                     
+                     if (uniqueImages.size > 0) {
+                         html += "<h3 class='mb-4 text-center'>Các trang liên quan</h3>";
+                         html += "<div class='thumbnail-gallery'>"; // Bắt đầu flex container
 
-                         html += `
-                             <div class="card mb-3 shadow-sm result-card">
-                                 <div class="card-header bg-light py-2">
-                                     <a href="${r.source_file_url}" target="_blank" title="Tải file PDF gốc">
+                         // Lặp qua các ảnh đã lọc
+                         uniqueImages.forEach(r => {
+                             // === ĐÂY LÀ KHỐI HTML MỚI ===
+                             // Không dùng card, chỉ dùng thumbnail
+                             html += `
+                                 <div class="thumbnail-item">
+                                     <img src="${r.image_url}" 
+                                          alt="Trang ${r.page_number}"
+                                          onclick="openModal('${r.image_url}')">
+                                     <p class="small text-muted mb-0">
+                                         <i class="fas fa-book-open text-info"></i>
+                                         <strong>Trang ${r.page_number}</strong>
+                                     </p>
+                                     <a href="${r.source_file_url}" target="_blank" class="small-link" title="Tải file ${r.source_file_pretty_name}">
                                          <i class="fas fa-file-pdf"></i>
-                                         <strong>Nguồn:</strong> ${r.source_file_pretty_name}
+                                         ${r.source_file_pretty_name}
                                      </a>
                                  </div>
-                                 <div class="card-body">
-                                     <h5 class="card-title">${r.title}</h5>
-                                     <p class="card-text">${highlightedContent}</p>
-                                     <p class="text-muted small mt-3 mb-0 text-right">
-                                         <i class="fas fa-check-circle text-success"></i>
-                                         Độ liên quan: <strong>${r.similarity ? (r.similarity * 100).toFixed(0) : 'N/A'}%</strong>
-                                     </p>
-                                 </div>
-                             </div>`;
-                       });
-                  } else {
-                      html = "<p class='text-center text-info'>Không tìm thấy kết quả nào phù hợp.</p>";
-                  }
-                  resultsDiv.innerHTML = html;
+                             `;
+                             // === KẾT THÚC KHỐI HTML MỚI ===
+                         });
+
+                         html += "</div>"; // Kết thúc flex container
+                     } else {
+                         html = "<p class='text-center text-info'>Không tìm thấy kết quả nào phù hợp.</p>";
+                     }
+
+                 } else {
+                     html = "<p class='text-center text-info'>Không tìm thấy kết quả nào phù hợp.</p>";
+                 }
+                 resultsDiv.innerHTML = html;
              } catch(error) {
-                  resultsDiv.innerHTML = `<p class='text-center text-danger'>Đã xảy ra lỗi khi tìm kiếm: ${error.message}</p>`;
+                 resultsDiv.innerHTML = `<p class='text-center text-danger'>Đã xảy ra lỗi khi tìm kiếm: ${error.message}</p>`;
              }
          });
       </script>
-   </body>
+      </body>
 </html>

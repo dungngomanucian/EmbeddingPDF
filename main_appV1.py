@@ -12,45 +12,45 @@ from supabase import create_client, Client
 from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer
 import ast
-import subprocess
-import tempfile
 
-# 1. KHỞI TẠO VÀ CẤU HÌNH 
+# --- 1. KHỞI TẠO VÀ CẤU HÌNH ---
 load_dotenv()
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 BUCKET_NAME = os.getenv("SUPABASE_BUCKET")
-SECRET_KEY = os.getenv("SECRET_KEY")
+SECRET_KEY = os.getenv("SECRET_KEY", "a_very_secret_key_that_should_be_changed")
 
 # Khởi tạo các client
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 app = Flask(__name__, template_folder="templates")
 app.secret_key = SECRET_KEY
 
-# Tải mô hình embedding 
+# Tải mô hình embedding (chỉ 1 lần)
+print("Đang tải mô hình Sentence Transformer...")
 embed_model = SentenceTransformer("intfloat/multilingual-e5-large")
+print("Mô hình đã tải xong.")
 
-# Khởi tạo biến toàn cục cho chỉ mục của faiss
+# Khởi tạo biến toàn cục cho chỉ mục tìm kiếm
 faiss_index = None
 index_to_id = {}
 
+# --- 2. CÁC HÀM XỬ LÝ DỮ LIỆU CỐT LÕI ---
 
-# 2. XỬ LÝ DỮ LIỆU 
-
-# Chuẩn hóa và làm sạch văn bản thô từ PDF
 def clean_text(text: str) -> str:
+    """Chuẩn hóa và làm sạch văn bản thô từ PDF."""
     text = unicodedata.normalize('NFC', text)
     text = re.sub(r'\s+', ' ', text).strip()
     return text
 
 def build_faiss_index():
-    # Tải tất cả vector từ database
+    """Tải tất cả vector từ Supabase và xây dựng chỉ mục FAISS trong bộ nhớ."""
     global faiss_index, index_to_id
+    print("--- Bắt đầu xây dựng chỉ mục FAISS ---")
     try:
-        response = supabase.table('documentsv2').select('id, embedding').execute()
+        response = supabase.table('documents').select('id, embedding').execute()
         docs = response.data
         if not docs:
-            print("Error: No data in database!")
+            print("Cảnh báo: Không có tài liệu nào trong CSDL để xây dựng chỉ mục.")
             faiss_index = None
             return
 
@@ -65,90 +65,47 @@ def build_faiss_index():
         faiss_index.add(embeddings)
         print(f"--- Đã xây dựng xong chỉ mục FAISS với {faiss_index.ntotal} vector ---")
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"!!! Lỗi nghiêm trọng khi xây dựng chỉ mục FAISS: {e}")
         faiss_index = None
 
 
-def generate_and_upload_page_images(pdf_bytes, safe_filename):
-    # Tạo ảnh JPEG cho mỗi trang của file PDF và tải lên Storage. Trả về một map {số_trang: url_ảnh}.
-    print(f"--- Bắt đầu tạo ảnh cho: {safe_filename} ---")
-    page_url_map = {}
-    # Chỉ lấy đuôi .pdf cho tên file ảnh mới
-    base_name = os.path.splitext(safe_filename)[0]
-    
-    try:
-        doc = fitz.open(stream=pdf_bytes, filetype="pdf")
-        for page_num in range(len(doc)):
-            page = doc.load_page(page_num)
-            
-            # Tạo ảnh (DPI 150, chất lượng 80%)
-            pix = page.get_pixmap(dpi=150) 
-            img_bytes = pix.tobytes(output="jpg", jpg_quality=80)
-            
-            # Tạo tên file và đường dẫn
-            current_page_number = page_num + 1 # Chuyển từ 0-index sang 1-index
-            image_name = f"page_{current_page_number}.jpg"
-            image_path_in_bucket = f"page_images/{base_name}/{image_name}"
-            
-            # Tải ảnh lên Storage
-            supabase.storage.from_(BUCKET_NAME).remove([image_path_in_bucket])
-            supabase.storage.from_(BUCKET_NAME).upload(
-                image_path_in_bucket, 
-                img_bytes, 
-                {"content-type": "image/jpeg", "cache-control": "3600"}
-            )
-            
-            # Lấy URL từ storage của supabase
-            image_url = supabase.storage.from_(BUCKET_NAME).get_public_url(image_path_in_bucket)
-            
-            # Lưu vào map
-            page_url_map[current_page_number] = image_url
-
-        print(f"--- Đã tạo và tải lên {len(page_url_map)} ảnh ---")
-        return page_url_map
-    except Exception as e:
-        print(f"Error: {e}")
-        return {} # Trả về map rỗng nếu lỗi
-
-
-def parse_and_chunk_pdf(pdf_bytes, safe_filename, page_url_map):
-    # Hàm nhận page_url_map và lưu image_url vào metadata của mỗi chunk.
-    print(f"--- Bắt đầu chunking cho file: {safe_filename} ---")
+def parse_and_chunk_pdf(pdf_bytes, safe_filename):
+    """
+    Cải tiến: Vẫn chia nhỏ PDF nhưng giờ đây mỗi chunk sẽ ghi nhớ được
+    tiêu đề mục (heading) gần nhất chứa nó.
+    """
+    print(f"--- Bắt đầu chunking (hybrid approach) cho file: {safe_filename} ---")
     doc = fitz.open(stream=pdf_bytes, filetype="pdf")
     chunks = []
     current_heading = "Lời nói đầu"
     current_text_buffer = ""
 
+    # Mẫu regex để nhận diện các đầu mục/tiêu đề
     heading_pattern = re.compile(
         r"^(PHẦN\s+[\d\.]+|[IVXLCDM]+\s*\.|Chương\s+[IVXLCDM]+|Điều\s+\d+|Mục\s+\d+|[A-Z]\.|\d+\.\d*\.)",
         re.IGNORECASE
     )
 
-    start_page = 0 # Bắt đầu từ trang đầu tiên
-    current_chunk_start_page = start_page + 1 
-    
+    start_page = 6
     for page_num in range(start_page, len(doc)):
         page = doc.load_page(page_num)
-        blocks = page.get_text("blocks")
+        blocks = page.get_text("blocks")  # Lấy theo block để giữ cấu trúc tốt hơn
         for block in blocks:
             block_text = clean_text(block[4])
             if not block_text:
                 continue
 
+            # Kiểm tra xem block này có phải là một tiêu đề không
             if heading_pattern.match(block_text) and len(block_text) < 150:
+                # Nếu có buffer cũ, lưu nó lại thành 1 chunk
                 if current_text_buffer.strip():
                     chunks.append({
                         "content": f"Tiêu đề: {current_heading}\nNội dung: {current_text_buffer.strip()}",
-                        "metadata": {
-                            "source_file": safe_filename, 
-                            "section_title": current_heading,
-                            "page": current_chunk_start_page,
-                            "image_url": page_url_map.get(current_chunk_start_page, None) # << DÒNG MỚI
-                        }
+                        "metadata": {"source_file": safe_filename, "section_title": current_heading}
                     })
+                # Cập nhật tiêu đề mới và reset buffer
                 current_heading = block_text
                 current_text_buffer = ""
-                current_chunk_start_page = page_num + 1 
             else:
                 current_text_buffer += block_text + "\n"
 
@@ -156,18 +113,13 @@ def parse_and_chunk_pdf(pdf_bytes, safe_filename, page_url_map):
     if current_text_buffer.strip():
         chunks.append({
             "content": f"Tiêu đề: {current_heading}\nNội dung: {current_text_buffer.strip()}",
-            "metadata": {
-                "source_file": safe_filename, 
-                "section_title": current_heading,
-                "page": current_chunk_start_page,
-                "image_url": page_url_map.get(current_chunk_start_page, None) 
-            }
+            "metadata": {"source_file": safe_filename, "section_title": current_heading}
         })
 
     print(f"--- Hoàn tất chunking. Tổng số chunks được tạo: {len(chunks)} ---")
     return chunks
 
-# 3. HÀM HỖ
+# --- 3. CÁC HÀM HỖ TRỢ ---
 def slugify_filename(filename: str) -> str:
     name, ext = os.path.splitext(filename)
     name = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode("ascii")
@@ -208,7 +160,7 @@ def list_files():
         print(f"Lỗi khi liệt kê file: {e}")
         return []
 
-# 4. API
+# --- 4. FLASK ROUTES ---
 @app.route("/")
 def home():
     return render_template("search_site.html")
@@ -255,124 +207,70 @@ def upload_page():
                 flash("❌ Vui lòng chọn một file để upload.", "error")
                 return redirect(request.url)
 
-            pdf_bytes_in = file.read()
+            pdf_bytes = file.read()
             safe_pdf_name = slugify_filename(file.filename)
-            
-            ocr_pdf_bytes = None
-            temp_in_path = ""
-            temp_unsigned_path = ""
-            temp_out_path = ""
-            
-            try:
-                # 1. Tạo file tạm GỐC
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_in:
-                    temp_in.write(pdf_bytes_in)
-                    temp_in_path = temp_in.name
-                
-                # 2. Tạo file tạm KHÔNG CHỮ KÝ
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_unsigned:
-                    temp_unsigned_path = temp_unsigned.name
-                
-                # 3. Tạo file tạm KẾT QUẢ OCR
-                with tempfile.NamedTemporaryFile(delete=True, suffix=".pdf") as temp_out_obj:
-                    temp_out_path = temp_out_obj.name
 
-                # 3a. Dùng GhostScript để xóa chữ ký
-                print(f"--- Đang loại bỏ chữ ký số khỏi: {safe_pdf_name} ---")
-                gs_result = subprocess.run(
-                    ['gswin64c', '-o', temp_unsigned_path, '-sDEVICE=pdfwrite', '-dNOSAFER', temp_in_path],
-                    capture_output=True, text=True, check=False
-                )
-                if gs_result.returncode != 0:
-                    print("!!! LỖI GHOSTSCRIPT:", gs_result.stderr)
-                    flash(f"❌ Lỗi khi xử lý file (Ghostscript): {gs_result.stderr[:200]}...", "error")
-                    return redirect(request.url)
-                print("--- Đã loại bỏ chữ ký số ---")
+            # 1. Tải file lên Storage
+            supabase.storage.from_(BUCKET_NAME).upload(safe_pdf_name, pdf_bytes, {"content-type": "application/pdf"})
 
-                # 3b. Chạy OCR trên file đã xóa chữ ký
-                print(f"--- Bắt đầu OCR cho file (đã unsigned): {safe_pdf_name} ---")
-                ocr_result = subprocess.run(
-                    ['ocrmypdf', '-l', 'vie+eng', '-O0', '--force-ocr', '--continue-on-soft-render-error', temp_unsigned_path, temp_out_path],
-                    capture_output=True, text=True, check=False
-                )
-                if ocr_result.returncode != 0:
-                    flash(f"❌ Lỗi OCR chi tiết: {ocr_result.stderr[:200]}...", "error")
-                    return redirect(request.url)
-                print("--- OCR hoàn tất ---")
-
-                # 4. Đọc file kết quả đã OCR
-                with open(temp_out_path, 'rb') as f_out:
-                    ocr_pdf_bytes = f_out.read()
-            
-            except Exception as ocr_error:
-                print(f"!!! Lỗi Python khi OCR: {ocr_error}")
-                flash(f"❌ Lỗi Python khi OCR: {ocr_error}", "error")
-                return redirect(request.url)
-            finally:
-                if temp_in_path and os.path.exists(temp_in_path): os.remove(temp_in_path)
-                if temp_unsigned_path and os.path.exists(temp_unsigned_path): os.remove(temp_unsigned_path)
-                if temp_out_path and os.path.exists(temp_out_path): os.remove(temp_out_path)
-
-            # Tải file GỐC lên Storage
-            supabase.storage.from_(BUCKET_NAME).upload(safe_pdf_name, pdf_bytes_in, {"content-type": "application/pdf"})
-
-            # Tạo và tải lên ảnh cho từng trang, sử dụng file ocr_pdf_bytes (đã sạch) để tạo ảnh
-            page_url_map = generate_and_upload_page_images(ocr_pdf_bytes, safe_pdf_name)
-            if not page_url_map and fitz.open(stream=pdf_bytes_in, filetype="pdf").page_count > 0:
-                flash("⚠️ Lỗi khi tạo ảnh xem trước cho file (sẽ tiếp tục mà không có ảnh).", "warning")
-
-            # Phân đoạn file ĐÃ OCR
-            chunks = parse_and_chunk_pdf(ocr_pdf_bytes, safe_pdf_name, page_url_map) 
+            # 2. Phân đoạn PDF thành các chunks
+            chunks = parse_and_chunk_pdf(pdf_bytes, safe_pdf_name)
             if not chunks:
-                flash("⚠️ Không thể trích xuất nội dung từ file (sau khi đã OCR).", "warning")
+                flash("⚠️ Không thể trích xuất nội dung từ file.", "warning")
                 return redirect(request.url)
 
-            # Xóa dữ liệu cũ nếu có của file này trong DB
-            supabase.table("documentsv2").delete().eq('metadata->>source_file', safe_pdf_name).execute()
+            # 3. Xóa dữ liệu cũ của file này trong DB
+            supabase.table("documents").delete().eq('metadata->>source_file', safe_pdf_name).execute()
 
-            # Tạo embedding cho nội dung của các chunks
+            # 4. Tạo embedding cho nội dung của các chunks
             contents_to_embed = [item['content'] for item in chunks]
             embeddings = embed_model.encode(contents_to_embed, batch_size=32, show_progress_bar=True)
 
-            # Chuẩn bị dữ liệu
+            # 5. Chuẩn bị và lưu dữ liệu mới vào DB
             data_to_insert = [{
                 "content": item['content'],
-                "metadata": item['metadata'], # metadata giờ đã chứa image_url
+                "metadata": item['metadata'],
                 "embedding": embeddings[i].tolist(),
             } for i, item in enumerate(chunks)]
 
-            # Lưu dữ liệu mới vào DB
             if data_to_insert:
-                supabase.table("documentsv2").insert(data_to_insert).execute()
-                build_faiss_index() # Xây dựng lại chỉ mục
-                flash(f"✅ OCR, tạo ảnh, và xử lý thành công file: {file.filename}", "success")
+                supabase.table("documents").insert(data_to_insert).execute()
+                build_faiss_index() # Xây dựng lại chỉ mục sau khi có dữ liệu mới
+                flash(f"✅ Upload và xử lý thành công file: {file.filename}", "success")
 
         except Exception as e:
             flash(f"❌ Lỗi xử lý khi upload: {e}", "error")
             print(f"!!! Lỗi upload: {e}")
-        return redirect(request.url)
+        return redirect(url_for('upload_page'))
 
     return render_template("upload_site.html", files=list_files())
 
 @app.route("/api/search")
 def search():
-    # API tìm kiếm trả về image_url lấy từ metadata.
+    """API tìm kiếm đã được đơn giản hóa và hiệu quả hơn."""
     global faiss_index, index_to_id
     q = request.args.get("q", "")
     if not q: return jsonify({"error": "Thiếu từ khóa tìm kiếm"}), 400
     if faiss_index is None: return jsonify({"error": "Chỉ mục tìm kiếm chưa sẵn sàng."}), 503
 
     try:
+        # 1. Tạo embedding cho câu truy vấn
         query_embedding = embed_model.encode(q).astype('float32').reshape(1, -1)
         faiss.normalize_L2(query_embedding)
+
+        # 2. Tìm kiếm trực tiếp K kết quả gần nhất trong FAISS
         k = 10
         distances, indices = faiss_index.search(query_embedding, k)
+
+        # 3. Lấy ID của các documents tương ứng
         top_ids = [index_to_id[i] for i in indices[0] if i > -1]
         if not top_ids: return jsonify({"query": q, "results": []})
-        scores = {index_to_id[i]: float(dist) for i, dist in zip(indices[0], distances[0]) if i > -1}
-        
-        response = supabase.table('documentsv2').select('id, content, metadata').in_('id', top_ids).execute()
 
+        # 4. Truy vấn CSDL để lấy nội dung đầy đủ của các kết quả
+        scores = {index_to_id[i]: float(dist) for i, dist in zip(indices[0], distances[0]) if i > -1}
+        response = supabase.table('documents').select('id, content, metadata').in_('id', top_ids).execute()
+
+        # 5. Sắp xếp và định dạng lại kết quả
         sorted_docs = sorted(response.data, key=lambda x: top_ids.index(x['id']))
         results = []
         for doc in sorted_docs:
@@ -384,9 +282,7 @@ def search():
                 "content_body": doc.get('content', '').replace('\n', '<br>'),
                 "similarity": scores[doc['id']],
                 "source_file_pretty_name": pretty_name(safe_name),
-                "source_file_url": supabase.storage.from_(BUCKET_NAME).get_public_url(safe_name) if safe_name else "#",
-                "page_number": metadata.get('page', 'N/A'),
-                "image_url": metadata.get('image_url', '') 
+                "source_file_url": supabase.storage.from_(BUCKET_NAME).get_public_url(safe_name) if safe_name else "#"
             })
 
         return jsonify({"query": q, "results": results})
@@ -396,38 +292,24 @@ def search():
 
 @app.route('/api/delete_file', methods=['POST'])
 def delete_file():
+    """API xóa file đã được cập nhật để nhất quán với metadata mới."""
     if 'user' not in session: return jsonify({'error': 'Unauthorized'}), 401
     safe_pdf_name = request.json.get('safe_name')
     if not safe_pdf_name: return jsonify({'error': 'Tên file không hợp lệ'}), 400
     try:
-        # 1. Xóa các chunks trong DB
-        supabase.table('documentsv2').delete().eq('metadata->>source_file', safe_pdf_name).execute()
-        
-        # 2. Xóa file PDF gốc trong Storage
+        # Xóa các chunks trong DB dựa trên metadata.source_file
+        supabase.table('documents').delete().eq('metadata->>source_file', safe_pdf_name).execute()
+        # Xóa file trong Storage
         supabase.storage.from_(BUCKET_NAME).remove([safe_pdf_name])
-        
-        # 3. Xóa các ảnh đã tạo
-        base_name = os.path.splitext(safe_pdf_name)[0]
-        image_folder_path = f"page_images/{base_name}"
-        
-        # Lấy ra tất cả file trong storage ảnh
-        image_files = supabase.storage.from_(BUCKET_NAME).list(path=image_folder_path)
-        
-        if image_files:
-            # Tạo danh sách tên file đầy đủ (path + name)
-            files_to_delete = [f"{image_folder_path}/{f['name']}" for f in image_files]
-            # Xóa hàng loạt
-            supabase.storage.from_(BUCKET_NAME).remove(files_to_delete)
-            print(f"--- Đã xóa {len(files_to_delete)} ảnh liên quan ---")
-
-        # 4. Xây dựng lại chỉ mục
+        # Xây dựng lại chỉ mục
         build_faiss_index()
-        flash(f"✅ Đã xóa thành công file và các ảnh liên quan. Chỉ mục đã cập nhật.", "success")
+        flash(f"✅ Đã xóa thành công file. Chỉ mục tìm kiếm đã được cập nhật.", "success")
         return jsonify({'message': 'Xóa file thành công'})
     except Exception as e:
         flash(f"❌ Lỗi khi xóa file: {e}", "error")
         return jsonify({'error': str(e)}), 500
 
+# --- 5. KHỞI CHẠY ỨNG DỤNG ---
 if __name__ == "__main__":
     build_faiss_index()  # Xây dựng chỉ mục lần đầu tiên khi app chạy
     app.run(debug=True)

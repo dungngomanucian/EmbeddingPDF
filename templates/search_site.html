@@ -14,9 +14,10 @@
       <link rel="stylesheet" href="{{ url_for('static', filename='propertiesOfOrigionalWebsite/css/jquery.mCustomScrollbar.min.css') }}">
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
       <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap&subset=vietnamese" rel="stylesheet">
+      <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
       <style>
-         /* CSS GỐC GIỮ NGUYÊN */
+         /* CSS CHUNG */
          .card-title {
             font-weight: 600;
             margin-bottom: 0.75rem;
@@ -30,16 +31,105 @@
          .card-header a:hover {
             text-decoration: underline;
          }
-         .highlight {
-            background-color: #ffcf00;
-            padding: 2px 4px;
-            border-radius: 3px;
+         
+         /* CSS CHO MODE HÌNH ẢNH (THUMBNAIL) */
+         .thumbnail-gallery {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+         }
+         .thumbnail-item {
+            border: 1px solid #ddd;
+            padding: 5px;
+            border-radius: 4px;
+            background: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 180px;
+         }
+         .thumbnail-item img {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            cursor: pointer;
+            transition: transform 0.2s;
+         }
+         .thumbnail-item img:hover {
+             transform: scale(1.05);
+         }
+         .thumbnail-item a.small-link {
+            font-size: 0.8em;
+            display: block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+         }
+
+         /* CSS CHO MODE VĂN BẢN (TEXT CARD) */
+         .card-text {
+            text-align: justify;
+            line-height: 1.7;
+            white-space: pre-wrap;
+         }
+
+         /* CSS CHO MODE AI (NEW) */
+         .ai-response-box {
+            background: #f8fafd;
+            border: 1px solid #e1e4e8;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+         }
+         .ai-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eef2f5;
+            padding-bottom: 15px;
+         }
+         .ai-icon {
+            font-size: 28px;
+            color: #0d6efd;
+            margin-right: 15px;
+            animation: pulse 2s infinite;
+         }
+         .ai-title {
+            font-weight: 700;
+            color: #2c3e50;
+            font-size: 1.3rem;
+            margin: 0;
+         }
+         .ai-content {
+            color: #212529;
+            font-size: 1.05rem;
+            line-height: 1.8; /* Tăng khoảng cách dòng */
+            text-align: justify;
+         }
+         .ai-content p {
+            margin-bottom: 15px;
+         }
+         .ai-content ul, .ai-content ol {
+            margin-bottom: 20px;
+            padding-left: 25px;
+         }
+         .ai-content li {
+            margin-bottom: 8px;
+         }
+         .ai-content strong {
+            color: #0d6efd;
             font-weight: 600;
          }
-         
-         /* === CSS MỚI CHO LIGHTBOX MODAL === */
+         @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+         }
+
+         /* CSS MODAL */
          .image-modal {
-            display: none; /* Ẩn mặc định */
+            display: none;
             position: fixed;
             z-index: 1000;
             left: 0;
@@ -67,51 +157,48 @@
             transition: 0.3s;
             cursor: pointer;
          }
-         .image-modal-close:hover,
-         .image-modal-close:focus {
-            color: #bbb;
-            text-decoration: none;
-         }
-         /* === KẾT THÚC CSS MỚI === */
-
-         /* === CSS MỚI CHO ẢNH THU NHỎ === */
-         .thumbnail-gallery {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 15px;
-         }
-         .thumbnail-item {
-            border: 1px solid #ddd;
-            padding: 5px;
-            border-radius: 4px;
-            background: #fff;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            text-align: center;
-            width: 180px; /* Tăng độ rộng để chứa cả link file */
-         }
-         .thumbnail-item img {
-            width: 100%; /* Chiều rộng 100% của parent */
-            height: 220px; /* Chiều cao cố định */
-            object-fit: cover; /* Giữ tỷ lệ, cắt bớt nếu cần */
-            cursor: pointer;
-            transition: transform 0.2s;
-         }
-         .thumbnail-item img:hover {
-             transform: scale(1.05);
-         }
-         .thumbnail-item p {
-             margin: 5px 0 0 0;
-         }
-         .thumbnail-item a.small-link {
-            font-size: 0.8em;
-            display: block; /* Cho link xuống dòng */
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis; /* Cắt ngắn link nếu quá dài */
-         }
-         /* === KẾT THÚC CSS MỚI === */
          
+         /* CSS CHO SWITCH CHẾ ĐỘ */
+         .mode-switcher {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            gap: 15px;
+            flex-wrap: wrap;
+         }
+         .mode-label {
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            padding: 8px 20px;
+            border-radius: 25px;
+            background-color: #fff;
+            border: 1px solid #dee2e6;
+            color: #495057;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+         }
+         .mode-label:hover {
+             background-color: #f8f9fa;
+             transform: translateY(-2px);
+         }
+         .mode-input:checked + .mode-label {
+             background-color: #003366;
+             color: white;
+             border-color: #003366;
+             box-shadow: 0 4px 8px rgba(0,51,102,0.3);
+         }
+         /* Màu riêng cho nút AI */
+         #mode_ai:checked + .mode-label {
+             background: linear-gradient(45deg, #0d6efd, #0099ff);
+             border: none;
+         }
+         .mode-input {
+             display: none;
+         }
       </style>
    </head>
    <body style="font-family: 'Montserrat', sans-serif;">
@@ -120,6 +207,7 @@
          <span class="image-modal-close" id="modalCloseBtn">&times;</span>
          <img class="image-modal-content" id="modalImage">
       </div>
+
       <div class="header_section">
          <div class="container">
             <nav class="navbar navbar-expand-lg navbar-light bg-light">
@@ -170,6 +258,19 @@
          <div class="container">
             <div class="domain_box">
                <div class="domain_main">
+                  
+                  <!-- PHẦN CHỌN CHẾ ĐỘ TÌM KIẾM -->
+                  <div class="mode-switcher">
+                      <input type="radio" id="mode_ai" name="search_mode" value="ai" class="mode-input" checked>
+                      <label for="mode_ai" class="mode-label"><i class="fas fa-robot"></i> Hỏi đáp AI</label>
+
+                      <input type="radio" id="mode_image" name="search_mode" value="image" class="mode-input">
+                      <label for="mode_image" class="mode-label"><i class="fas fa-image"></i> Tìm ảnh gốc</label>
+
+                      <input type="radio" id="mode_text" name="search_mode" value="text" class="mode-input">
+                      <label for="mode_text" class="mode-label"><i class="fas fa-file-alt"></i> Tìm văn bản</label>
+                  </div>
+
                   <form id="searchForm" class="example" action="#">
                      <input type="text" id="queryInput" placeholder="Nhập câu hỏi hoặc từ khóa..." name="query" autocomplete="off">
                      <button type="submit"><i class="fas fa-search"></i> Tìm kiếm</button>
@@ -180,6 +281,7 @@
          </div>
       </div>
       <div class="about_section layout_padding">
+         <!-- (Giữ nguyên footer) -->
          <div class="container">
             <div class="row">
                <div class="col-md-4">
@@ -215,96 +317,127 @@
       <script src="{{ url_for('static', filename='propertiesOfOrigionalWebsite/js/custom.js') }}"></script>
 
       <script>
-         // === JS MỚI CHO MODAL ===
+         // === JS CHO MODAL ===
          const modal = document.getElementById("imageModal");
          const modalImg = document.getElementById("modalImage");
          const closeModalBtn = document.getElementById("modalCloseBtn");
 
-         // Hàm mở modal
          function openModal(imgUrl) {
             modal.style.display = "block";
             modalImg.src = imgUrl;
          }
+         closeModalBtn.onclick = function() { modal.style.display = "none"; }
+         modal.onclick = function(event) { if (event.target === modal) modal.style.display = "none"; }
 
-         // Hàm đóng modal
-         closeModalBtn.onclick = function() {
-            modal.style.display = "none";
-         }
-         modal.onclick = function(event) {
-             // Nếu click vào nền đen (không phải ảnh) thì đóng modal
-             if (event.target === modal) {
-                 modal.style.display = "none";
-             }
-         }
-         // === KẾT THÚC JS MỚI ===
-
-
+         // === LOGIC TÌM KIẾM ===
          document.getElementById("searchForm").addEventListener("submit", async (e) => {
              e.preventDefault();
              const query = document.getElementById("queryInput").value;
              const resultsDiv = document.getElementById("results");
+             const searchMode = document.querySelector('input[name="search_mode"]:checked').value;
 
              if (!query.trim()) {
                  resultsDiv.innerHTML = "<p class='text-warning text-center'>Vui lòng nhập nội dung tìm kiếm.</p>";
                  return;
              }
              
-             // Hàm highlight không còn cần thiết vì không hiển thị text
-             // const highlightKeywords = ...
+             let loadingText = "Đang tìm kiếm thông tin...";
+             if (searchMode === 'ai') {
+                 loadingText = "AI đang suy nghĩ và tìm kiếm...";
+             }
 
-             resultsDiv.innerHTML = `<div class="d-flex justify-content-center"><div class="spinner-border text-primary" role="status"></div></div><p class="text-center mt-2">Đang tìm kiếm...</p>`;
+             resultsDiv.innerHTML = `<div class="d-flex justify-content-center"><div class="spinner-border text-primary" role="status"></div></div><p class="text-center mt-2">${loadingText}</p>`;
 
              try {
-                 const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+                 const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&type=${searchMode}`);
                  const data = await res.json();
                  if (data.error) throw new Error(data.error);
 
                  let html = "";
                  if (data.results && data.results.length > 0) {
                      
-                     // === LOGIC LỌC ẢNH TRÙNG LẶP ===
-                     const uniqueImages = new Map();
-                     data.results.forEach(r => {
-                         // Chỉ thêm nếu ảnh có URL và chưa tồn tại
-                         if (r.image_url && !uniqueImages.has(r.image_url)) {
-                             uniqueImages.set(r.image_url, r);
-                         }
-                     });
-                     // === KẾT THÚC LOGIC LỌC ===
-                     
-                     if (uniqueImages.size > 0) {
-                         html += "<h3 class='mb-4 text-center'>Các trang liên quan</h3>";
-                         html += "<div class='thumbnail-gallery'>"; // Bắt đầu flex container
-
-                         // Lặp qua các ảnh đã lọc
-                         uniqueImages.forEach(r => {
-                             // === ĐÂY LÀ KHỐI HTML MỚI ===
-                             // Không dùng card, chỉ dùng thumbnail
+                     // === CASE 1: CHẾ ĐỘ AI ===
+                     if (searchMode === 'ai') {
+                         if (data.ai_answer) {
                              html += `
-                                 <div class="thumbnail-item">
-                                     <img src="${r.image_url}" 
-                                          alt="Trang ${r.page_number}"
-                                          onclick="openModal('${r.image_url}')">
-                                     <p class="small text-muted mb-0">
-                                         <i class="fas fa-book-open text-info"></i>
-                                         <strong>Trang ${r.page_number}</strong>
-                                     </p>
-                                     <a href="${r.source_file_url}" target="_blank" class="small-link" title="Tải file ${r.source_file_pretty_name}">
-                                         <i class="fas fa-file-pdf"></i>
-                                         ${r.source_file_pretty_name}
-                                     </a>
+                                 <div class="ai-response-box">
+                                     <div class="ai-header">
+                                         <i class="fas fa-sparkles ai-icon"></i>
+                                         <h4 class="ai-title">Trợ lý AI trả lời:</h4>
+                                     </div>
+                                     <div class="ai-content">
+                                         ${marked.parse(data.ai_answer)}
+                                     </div>
                                  </div>
                              `;
-                             // === KẾT THÚC KHỐI HTML MỚI ===
+                             
+                             // Nguồn tham khảo gọn gàng
+                             html += `<div class="mb-3 mt-4"><h5 class="text-muted" style="font-size:1.1rem"><i class="fas fa-book-reader"></i> Các nguồn tài liệu tham khảo:</h5></div>`;
+                             data.results.forEach((r, index) => {
+                                 html += `
+                                     <div class="card mb-2 shadow-sm bg-light border-0">
+                                         <div class="card-body py-2 d-flex align-items-center justify-content-between">
+                                             <div>
+                                                 <span class="badge badge-secondary mr-2">${index + 1}</span>
+                                                 <span class="font-weight-bold text-dark">${r.title}</span>
+                                             </div>
+                                             <a href="${r.source_file_url}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                 <i class="fas fa-file-pdf"></i> Xem file gốc
+                                             </a>
+                                         </div>
+                                     </div>`;
+                             });
+                         } else {
+                             html = "<p class='text-center text-warning'>AI không thể tạo câu trả lời từ dữ liệu tìm thấy.</p>";
+                         }
+                     }
+                     
+                     // === CASE 2: CHẾ ĐỘ HÌNH ẢNH ===
+                     else if (searchMode === 'image') {
+                         html += `<h3 class='mb-4 text-center'>Kết quả Hình ảnh</h3>`;
+                         const uniqueImages = new Map();
+                         data.results.forEach(r => {
+                             if (r.image_url && !uniqueImages.has(r.image_url)) {
+                                 uniqueImages.set(r.image_url, r);
+                             }
                          });
+                         
+                         if (uniqueImages.size > 0) {
+                             html += "<div class='thumbnail-gallery'>";
+                             uniqueImages.forEach(r => {
+                                 html += `
+                                     <div class="thumbnail-item">
+                                         <img src="${r.image_url}" alt="Trang ${r.page_number}" onclick="openModal('${r.image_url}')">
+                                         <p class="small text-muted mb-0"><i class="fas fa-book-open text-info"></i> <strong>Trang ${r.page_number}</strong></p>
+                                         <a href="${r.source_file_url}" target="_blank" class="small-link" title="Tải file"><i class="fas fa-file-pdf"></i> ${r.source_file_pretty_name}</a>
+                                     </div>`;
+                             });
+                             html += "</div>";
+                         } else {
+                             html = "<p class='text-center text-info'>Không tìm thấy hình ảnh phù hợp.</p>";
+                         }
+                     }
 
-                         html += "</div>"; // Kết thúc flex container
-                     } else {
-                         html = "<p class='text-center text-info'>Không tìm thấy kết quả nào phù hợp.</p>";
+                     // === CASE 3: CHẾ ĐỘ VĂN BẢN ===
+                     else {
+                         html += `<h3 class='mb-4 text-center'>Kết quả Văn bản</h3>`;
+                         data.results.forEach(r => {
+                             html += `
+                                 <div class="card mb-3 shadow-sm result-card">
+                                     <div class="card-header bg-light py-2">
+                                         <a href="${r.source_file_url}" target="_blank"><i class="fas fa-file-pdf"></i> <strong>Nguồn:</strong> ${r.source_file_pretty_name}</a>
+                                     </div>
+                                     <div class="card-body">
+                                         <h5 class="card-title">${r.title}</h5>
+                                         <p class="card-text">${r.content_body}</p>
+                                         <p class="text-muted small mt-3 mb-0 text-right"><i class="fas fa-check-circle text-success"></i> Độ liên quan: <strong>${r.similarity ? (r.similarity * 100).toFixed(0) : 'N/A'}%</strong></p>
+                                     </div>
+                                 </div>`;
+                         });
                      }
 
                  } else {
-                     html = "<p class='text-center text-info'>Không tìm thấy kết quả nào phù hợp.</p>";
+                     html = "<p class='text-center text-info'>Không tìm thấy kết quả nào phù hợp trong cơ sở dữ liệu.</p>";
                  }
                  resultsDiv.innerHTML = html;
              } catch(error) {
@@ -312,5 +445,5 @@
              }
          });
       </script>
-      </body>
+   </body>
 </html>

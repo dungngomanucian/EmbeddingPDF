@@ -17,7 +17,7 @@
       <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
       <style>
-         /* CSS CHUNG */
+         /* css chung */
          .card-title {
             font-weight: 600;
             margin-bottom: 0.75rem;
@@ -32,7 +32,7 @@
             text-decoration: underline;
          }
          
-         /* CSS CHO MODE HÌNH ẢNH (THUMBNAIL) */
+         /* css cho tính năng tìm kiếm trả về hình ảnh */
          .thumbnail-gallery {
             display: flex;
             flex-wrap: wrap;
@@ -66,14 +66,14 @@
             text-overflow: ellipsis;
          }
 
-         /* CSS CHO MODE VĂN BẢN (TEXT CARD) */
+         /* css cho chế độ tìm kiếm trả về văn bản */
          .card-text {
             text-align: justify;
             line-height: 1.7;
             white-space: pre-wrap;
          }
 
-         /* CSS CHO MODE AI (NEW) */
+         /* css cho chế độ tìm kiếm trả về nội dung được tổng hợp bởi AI */
          .ai-response-box {
             background: #f8fafd;
             border: 1px solid #e1e4e8;
@@ -104,7 +104,7 @@
          .ai-content {
             color: #212529;
             font-size: 1.05rem;
-            line-height: 1.8; /* Tăng khoảng cách dòng */
+            line-height: 1.8; 
             text-align: justify;
          }
          .ai-content p {
@@ -127,7 +127,7 @@
             100% { transform: scale(1); opacity: 1; }
          }
 
-         /* CSS MODAL */
+         /* css cho modal */
          .image-modal {
             display: none;
             position: fixed;
@@ -158,7 +158,7 @@
             cursor: pointer;
          }
          
-         /* CSS CHO SWITCH CHẾ ĐỘ */
+         /* css cho switch chế độ */
          .mode-switcher {
             display: flex;
             justify-content: center;
@@ -259,7 +259,7 @@
             <div class="domain_box">
                <div class="domain_main">
                   
-                  <!-- PHẦN CHỌN CHẾ ĐỘ TÌM KIẾM -->
+                  <!-- phần chọn chế độ tìm kiếm -->
                   <div class="mode-switcher">
                       <input type="radio" id="mode_ai" name="search_mode" value="ai" class="mode-input" checked>
                       <label for="mode_ai" class="mode-label"><i class="fas fa-robot"></i> Hỏi đáp AI</label>
@@ -317,7 +317,7 @@
       <script src="{{ url_for('static', filename='propertiesOfOrigionalWebsite/js/custom.js') }}"></script>
 
       <script>
-         // === JS CHO MODAL ===
+         // === js cho modal ===
          const modal = document.getElementById("imageModal");
          const modalImg = document.getElementById("modalImage");
          const closeModalBtn = document.getElementById("modalCloseBtn");
@@ -329,7 +329,7 @@
          closeModalBtn.onclick = function() { modal.style.display = "none"; }
          modal.onclick = function(event) { if (event.target === modal) modal.style.display = "none"; }
 
-         // === LOGIC TÌM KIẾM ===
+         // === logic tìm kiếm ===
          document.getElementById("searchForm").addEventListener("submit", async (e) => {
              e.preventDefault();
              const query = document.getElementById("queryInput").value;
@@ -356,7 +356,7 @@
                  let html = "";
                  if (data.results && data.results.length > 0) {
                      
-                     // === CASE 1: CHẾ ĐỘ AI ===
+                     // === case 1: chế độ tìm kiếm trả về nội dung được tổng hợp bởi AI ===
                      if (searchMode === 'ai') {
                          if (data.ai_answer) {
                              html += `
@@ -371,7 +371,7 @@
                                  </div>
                              `;
                              
-                             // Nguồn tham khảo gọn gàng
+                             // Hiển thị file tham khảo gốc
                              html += `<div class="mb-3 mt-4"><h5 class="text-muted" style="font-size:1.1rem"><i class="fas fa-book-reader"></i> Các nguồn tài liệu tham khảo:</h5></div>`;
                              data.results.forEach((r, index) => {
                                  html += `
@@ -392,7 +392,7 @@
                          }
                      }
                      
-                     // === CASE 2: CHẾ ĐỘ HÌNH ẢNH ===
+                     // === case 2: chế độ tìm kiếm trả về hình ảnh ===
                      else if (searchMode === 'image') {
                          html += `<h3 class='mb-4 text-center'>Kết quả Hình ảnh</h3>`;
                          const uniqueImages = new Map();
@@ -418,7 +418,7 @@
                          }
                      }
 
-                     // === CASE 3: CHẾ ĐỘ VĂN BẢN ===
+                     // === case 3: chế độ tìm kiếm trả về văn bản ===
                      else {
                          html += `<h3 class='mb-4 text-center'>Kết quả Văn bản</h3>`;
                          data.results.forEach(r => {

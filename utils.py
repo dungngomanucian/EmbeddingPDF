@@ -6,19 +6,15 @@ import uuid
 from dateutil import parser, tz
 from config import Config, supabase
 
+# Hàm chuẩn hóa và làm sạch văn bản.
 def clean_text(text: str) -> str:
-    """Chuẩn hóa và làm sạch văn bản."""
-    if not text: return ""
+    if not text: return 
     text = unicodedata.normalize('NFC', text)
     text = re.sub(r'\s+', ' ', text).strip()
     return text
 
+# Hàm tạo ID định danh duy nhất cho nội dung file.
 def create_file_identifier(filename: str) -> str:
-    """
-    Tạo ID định danh duy nhất cho nội dung file.
-    Loại bỏ các hậu tố version/copy phổ biến để nhận diện trùng lặp thông minh.
-    Ví dụ: "Quy che (1).pdf" -> "quy-che" (trùng với "Quy che.pdf")
-    """
     name, _ = os.path.splitext(filename)
     
     # 1. Loại bỏ (số) ở cuối: "File (1)", "File(2)"
@@ -36,8 +32,8 @@ def create_file_identifier(filename: str) -> str:
     name = re.sub(r"[-\s]+", "-", name)
     return name
 
+# Hàm tạo tên file an toàn (có timestamp) để lưu trữ.
 def slugify_filename(filename: str) -> str:
-    """Tạo tên file an toàn lưu trữ (kèm timestamp)."""
     name, ext = os.path.splitext(filename)
     name = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode("ascii")
     name = re.sub(r"[^\w\s-]", "", name).strip().lower()
@@ -46,8 +42,8 @@ def slugify_filename(filename: str) -> str:
     uid = uuid.uuid4().hex[:6]
     return f"{ts}-{name}-{uid}{ext}"
 
+# Hàm format tên file hiển thị đẹp.
 def pretty_name(filename: str) -> str:
-    """Chuyển tên file safe thành tên hiển thị đẹp."""
     try:
         name, ext = os.path.splitext(filename)
         parts = name.split("-")
@@ -56,16 +52,16 @@ def pretty_name(filename: str) -> str:
     except Exception:
         return filename
 
+# Hàm format thời gian ISO sang định dạng Việt Nam.
 def format_time(iso_str: str) -> str:
-    """Format thời gian ISO sang định dạng Việt Nam."""
     try:
         dt = parser.isoparse(iso_str).astimezone(tz.gettz("Asia/Ho_Chi_Minh"))
         return dt.strftime("%d/%m/%Y %H:%M")
     except Exception:
         return iso_str
 
+# Hàm lấy danh sách file PDF từ Storage.
 def get_file_list():
-    """Lấy danh sách file PDF từ Storage."""
     try:
         files = supabase.storage.from_(Config.BUCKET_NAME).list()
         file_list = [

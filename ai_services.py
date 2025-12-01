@@ -1,32 +1,26 @@
 import google.generativeai as genai
 from config import Config
 
-# Cấu hình API
+# Kiểm tra cấu hình API
 if Config.GEMINI_API_KEY:
     genai.configure(api_key=Config.GEMINI_API_KEY)
-    print(">>> Đã cấu hình Gemini API.")
+    print("Đã gọi thành công Gemini API!")
 else:
-    print("!!! Cảnh báo: Chưa có API_KEY trong .env")
+    print("Chưa có API_KEY trong .env!")
 
 def ask_gemini(question, context_docs):
-    """
-    Gửi câu hỏi và ngữ cảnh cho Gemini để tổng hợp câu trả lời.
-    """
     if not Config.GEMINI_API_KEY:
         return None
 
     try:
-        # Tạo model
         model = genai.GenerativeModel('gemini-2.5-flash') 
 
-        # Chuẩn bị ngữ cảnh
         context_text = ""
-        # Giới hạn context để tránh quá dài (ví dụ: lấy tối đa 5 đoạn tốt nhất)
-        limit_docs = context_docs[:5] 
+        limit_docs = context_docs[:5]   # Giới hạn 5 context để tránh quá dài
+
         for i, doc in enumerate(limit_docs):
             context_text += f"--- Thông tin {i+1} ---\n{doc}\n\n"
 
-        # Tạo Prompt
         prompt = f"""
         Bạn là trợ lý AI của trường Đại học Giao thông Vận tải (UTC).
         Nhiệm vụ: Trả lời câu hỏi của sinh viên dựa CHÍNH XÁC vào thông tin được cung cấp.
@@ -43,7 +37,6 @@ def ask_gemini(question, context_docs):
         {context_text}
         """
 
-        # Gọi API
         response = model.generate_content(prompt)
         return response.text
 

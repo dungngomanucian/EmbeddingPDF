@@ -1,14 +1,8 @@
-jinja2
+flask
 python-dotenv
 supabase
 pymupdf
 sentence-transformers
 faiss-cpu
 python-dateutil
-flask
-pgvector
-psycopg2-binary
-transformers>=4.45.0
-accelerate>=0.33.0
-einops
-timm
+google-generativeai
